@@ -1,0 +1,10 @@
+{
+	"login": {
+		"success": "Sikeres belépés.",
+		"error": "Valamilyen jog hiánzyik!"
+	},
+	"route": {
+		"success": "",
+		"error": "Az oldal nem található!"
+	}
+}

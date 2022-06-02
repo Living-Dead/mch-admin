@@ -1,0 +1,10 @@
+{
+	"login": {
+		"success": "Successful login.",
+		"error": "Some access rights are missing!"
+	},
+	"route": {
+		"success": "",
+		"error": "Page not found!"
+	}
+}

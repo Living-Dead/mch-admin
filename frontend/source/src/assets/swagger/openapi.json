@@ -1,0 +1,892 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Alice service",
+    "description": "Az ügyfél egy publikus, azonosítás és regisztráció nélkül elérhető FE aloldalon keresztül \nmegadja a telepítési címét robbantott cím formában. A lista gépelés közben folyamatosan változik \na beírt érték alapján. FE kezeli, ehhez a BE az alábbi service-t nyújtja.\n",
+    "version": "v0.1"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3200/api/"
+    }
+  ],
+  "paths": {
+    "/settlement": {
+      "get": {
+        "tags": [
+          "address"
+        ],
+        "summary": "Settlement list",
+        "operationId": "settlementlist",
+        "description": "A FE lekérheti a településeket és visszaadjuk a település név listát.\nBp.-nél külön kerületek szerepelnek, mint önálló települések, nem lesz külön kerület lista a felületen).\n- A FE kérheti, hogy ne teljes lista jöjjön vissza.\n- Irányítószám alapján is lehet keresni.\n- settlementId will be used for communication. settlementId = ID created by Telenor. GEOX_ADDRESSES.settlementId\n- Válaszban utazik ID, Település neve és irányítószáma (array).\n- Ha nincs találat akkor 204 no content\n",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "description": "get settlement list with optional search field. If search field contains number then it is handled as zipcode.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Budapest"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementList"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/settlement/{settlementId}/publicspace": {
+      "get": {
+        "tags": [
+          "address"
+        ],
+        "summary": "get list of publicspaces for a settlementId",
+        "description": "A FE a kiválasztott településsel és opcionálisan irányítószámmal \nmeghívja a ALICE API-t, ami bekérdez az adatbázisba, és visszaadja a közterület \nneveket, addressId-kat az adott településen belül. \n- település kötelező input paraméter, az irányítószám opcionálisan megadandó,\nha megadja, akkor szűkítjük vele a közterületek listáját az adott településen belül\n- Public space name and type will also be separately provided to the FE, because PanDocs expects \nthe data in separate fields.\n",
+        "operationId": "addresslist",
+        "parameters": [
+          {
+            "name": "settlementId",
+            "in": "path",
+            "description": "get address list (street names) for a settlement.",
+            "required": true,
+            "schema": {
+              "type": "number"
+            },
+            "example": 493
+          },
+          {
+            "name": "zipCode",
+            "in": "query",
+            "description": "specify which zipcode should be used.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 1183
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "get publicspace list with optional search field.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Budapest"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressList"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No content"
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/publicspace/{publicSpaceId}/houseNr": {
+      "get": {
+        "tags": [
+          "address"
+        ],
+        "summary": "get list of house numbers for a publicSpaceId",
+        "description": "A kiválasztott közterülettel a FE meghívja a ALICE API-ját, ami visszaadja az adatbázis \nalapján az adott közterülethez létező házszámok listáját. Egyúttal megadva, hogy az adott \ncím alatt létezik-e további bontása a címnek.\n- BEAWARE: az itt használt addressId és geox adatbázisban definiált address_id\nnem azonos, ugyanis a geox address_id utcaszinten értelmezett, itt viszont házszámszinten.\n",
+        "operationId": "housenrlist",
+        "parameters": [
+          {
+            "name": "publicSpaceId",
+            "in": "path",
+            "description": "get housenumber list for a given public space.",
+            "required": true,
+            "schema": {
+              "type": "number"
+            },
+            "example": 493
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HousenrList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/houseNr/{addressId}/subaddresses": {
+      "get": {
+        "tags": [
+          "address"
+        ],
+        "summary": "get list of subadresses for a addressid",
+        "description": "A kiválasztott házszám addressId-jával a FE meghív(hat)ja a ALICE API-ját, \nami visszaadja az adatbázis alapján az adott cím alatt elérhető \nalcímeket.\n",
+        "operationId": "subaddresses",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "path",
+            "description": "get housenumber list (street names) for an address.",
+            "required": true,
+            "schema": {
+              "type": "number"
+            },
+            "example": 493
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubaddressList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/addressdetail": {
+      "get": {
+        "tags": [
+          "address"
+        ],
+        "summary": "get list of subadresses for a addressid",
+        "description": "Egy adott címhez köthető adatbázisban tárolt (összes) értékeket adja vissza \na szolgáltatás házszámszinten.\n",
+        "operationId": "addressdetail",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "query",
+            "description": "get housenumber list (street names) for an address.",
+            "required": true,
+            "schema": {
+              "type": "number"
+            },
+            "example": 493
+          },
+          {
+            "name": "src",
+            "in": "query",
+            "description": "get all/geox/mt related stored parameter for a given address. Default is geox",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": 493
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AddressDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/capabilities": {
+      "get": {
+        "tags": [
+          "capabilities"
+        ],
+        "summary": "Capabilities list",
+        "operationId": "capabilities",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "query",
+            "description": "get capabilities for an exact address.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Budapest"
+          },
+          {
+            "name": "caplist",
+            "in": "query",
+            "description": "list of capabilities to return. Default is all.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "all"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    },
+    "/polygons": {
+      "get": {
+        "tags": [
+          "map"
+        ],
+        "summary": "get polygons for an addressId",
+        "operationId": "zonepolygon",
+        "description": "Egy addressId-hoz több zona lehet definiálva így a \nservice a címhez rendelt zonák geojson poligonjait adja vissza.\n",
+        "parameters": [
+          {
+            "name": "addressId",
+            "in": "query",
+            "description": "get map polygons for an exact address referenced by addressId.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "Budapest"
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "description": "specify which version should be used (new/prod/old). Prod default value, adminpage usage only.",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "new"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Polygons"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Hibás kérés, paraméter",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Általános hiba Response.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorModel"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SettlementList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Settlement"
+        }
+      },
+      "Settlement": {
+        "type": "object",
+        "properties": {
+          "settlementId": {
+            "type": "number",
+            "description": "Uniq number of the settlement"
+          },
+          "settlement": {
+            "type": "string",
+            "description": "Name of the settlement",
+            "example": "Isaszeg"
+          },
+          "zipCodes": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "description": "zipcodes of the settlements",
+              "example": 1183
+            }
+          }
+        }
+      },
+      "AddressList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "publicSpaceId": {
+              "type": "number",
+              "description": "Uniq number of the address",
+              "example": 11233
+            },
+            "name": {
+              "type": "string",
+              "description": "address name (name of the street)",
+              "example": "Ábrahám Géza"
+            },
+            "type": {
+              "type": "string",
+              "description": "type of the address (utca, út, köz, stb.)",
+              "example": "utca"
+            },
+            "zipCode": {
+              "type": "number",
+              "description": "zipcode of the address",
+              "example": 1183
+            }
+          }
+        }
+      },
+      "HousenrList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "addressId": {
+              "type": "number",
+              "description": "Uniq number of the house",
+              "example": 184453
+            },
+            "name": {
+              "type": "string",
+              "description": "house number",
+              "example": "16/A"
+            },
+            "hasSubAddress": {
+              "type": "boolean",
+              "description": "whether it has subaddress",
+              "example": false
+            }
+          }
+        }
+      },
+      "SubaddressList": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "subAddressId": {
+              "type": "number",
+              "description": "Uniq number of the subaddress",
+              "example": 118284
+            },
+            "subAddressName": {
+              "type": "string",
+              "description": "name of the subaddress",
+              "example": "1. em. 3. ajtó"
+            },
+            "levelType": {
+              "type": "string",
+              "description": "floor type",
+              "example": "floor"
+            },
+            "levelNumber": {
+              "type": "string",
+              "description": "????",
+              "example": "specialfloor"
+            },
+            "door": {
+              "type": "string",
+              "description": "????",
+              "example": "FS"
+            },
+            "originalId": {
+              "type": "string",
+              "description": "????"
+            },
+            "carId": {
+              "type": "string",
+              "description": "????",
+              "example": 110009870947
+            },
+            "carStreetNr": {
+              "type": "string",
+              "description": "????",
+              "example": 159479
+            },
+            "fullAddressName": {
+              "type": "string",
+              "description": "????",
+              "example": "5241 Abádszalók, István király út 3. fszt. 1. ajtó"
+            }
+          }
+        }
+      },
+      "AddressDetails": {
+        "type": "object",
+        "properties": {
+          "geox": {
+            "type": "object",
+            "properties": {
+              "county": {
+                "type": "string",
+                "description": "County of the address",
+                "example": "PEST"
+              },
+              "settlement": {
+                "type": "string",
+                "description": "Settlement of the address",
+                "example": "Isaszeg"
+              },
+              "district": {
+                "type": "string",
+                "description": "District of the address",
+                "example": "XVIII"
+              },
+              "zipcode": {
+                "type": "number",
+                "description": "zipcode of the address",
+                "example": 1183
+              },
+              "name": {
+                "type": "string",
+                "description": "name of the address",
+                "example": "Ábrahám Géza utca"
+              },
+              "pandocsPublicSpaceCode": {
+                "type": "string",
+                "description": "pandocs code of the public space type",
+                "example": "UTCA"
+              },
+              "housenr": {
+                "type": "number",
+                "description": "Housenr of the address",
+                "example": 18
+              },
+              "address": {
+                "type": "string",
+                "description": "Address",
+                "example": "Ábrahám Géza utca 18"
+              },
+              "eovx": {
+                "type": "number",
+                "description": "EOV_X of the address",
+                "example": 655341
+              },
+              "eovy": {
+                "type": "number",
+                "description": "EOV_Y of the address",
+                "example": 230729
+              },
+              "wgs84x": {
+                "type": "number",
+                "description": "gps_x of the address",
+                "example": 19.118233
+              },
+              "wgs84y": {
+                "type": "number",
+                "description": "gps_y of the address",
+                "example": 47.420522
+              },
+              "id": {
+                "type": "number",
+                "description": "id of the address",
+                "example": 26574
+              }
+            }
+          },
+          "mt": {
+            "type": "object",
+            "properties": {
+              "settlement": {
+                "type": "string",
+                "description": "Settlement of the address"
+              },
+              "zipcode": {
+                "type": "string",
+                "description": "Zipcode of the address"
+              },
+              "district": {
+                "type": "string",
+                "description": "District of the address"
+              },
+              "streetName": {
+                "type": "string",
+                "description": "Streetname of the address"
+              },
+              "streetType": {
+                "type": "string",
+                "description": "Streettype of the address"
+              },
+              "pandocsPublicSpaceCode": {
+                "type": "string",
+                "description": "pandocs code of the public space type",
+                "example": 111
+              },
+              "streetNr": {
+                "type": "number",
+                "description": "Street number (housenumber) of the address"
+              },
+              "streetNrLast": {
+                "type": "number",
+                "description": "Last street number (housenumber) of the address"
+              },
+              "streetNrSuffix": {
+                "type": "string",
+                "description": "Street suffix of the address"
+              },
+              "name": {
+                "type": "string",
+                "description": "Address"
+              },
+              "hasSubAddress": {
+                "type": "boolean",
+                "description": "whether it has subaddresses for the address"
+              },
+              "hasSubAddressNeeded": {
+                "type": "string",
+                "description": "subaddress needed for the address"
+              },
+              "originalId": {
+                "type": "string",
+                "description": "Original MT id of the address"
+              },
+              "carId": {
+                "type": "string",
+                "description": "CAR id of the address"
+              },
+              "subAddressCarId": {
+                "type": "string",
+                "description": "CAR address id of the address"
+              },
+              "carStreetNr": {
+                "type": "string",
+                "description": "CAR street number of the address"
+              },
+              "buildingName": {
+                "type": "string",
+                "description": "Building name for the address"
+              },
+              "staircase": {
+                "type": "string",
+                "description": "Staircase  of the address"
+              },
+              "geoxId": {
+                "type": "number",
+                "description": "Geox id of the address"
+              }
+            }
+          }
+        }
+      },
+      "Capabilities": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "key": {
+              "type": "string",
+              "description": "Uniq key of a capabilities",
+              "example": "FWA_50M_coverage"
+            },
+            "value": {
+              "type": "string",
+              "description": "Capability value (even a json encoded object)",
+              "example": true
+            },
+            "mimeType": {
+              "type": "string",
+              "description": "Encoding type",
+              "example": "application/json"
+            }
+          }
+        }
+      },
+      "Polygons": {
+        "type": "array",
+        "items": {
+          "type": "string",
+          "description": "geojson string encoded data"
+        }
+      },
+      "ErrorModel": {
+        "required": [
+          "detail",
+          "status"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "A service által visszaadott HTTP Status code, vagy annak kiterjesztett változata.\n  * 400     : Bad Request\n  * 400-012 : Specifikus hiba\n",
+            "example": "400-012"
+          },
+          "detail": {
+            "type": "string",
+            "description": "A konkrét hiba előfordulás részletes leírása.",
+            "example": "Request paraméter érvénytelen értéket tartalmaz"
+          }
+        },
+        "description": "Detailed status, error information"
+      }
+    },
+    "securitySchemes": {
+      "api_key": {
+        "type": "apiKey",
+        "name": "X-Api-Key",
+        "in": "header"
+      }
+    }
+  }
+}

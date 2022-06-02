@@ -1,0 +1,22 @@
+.v-btn {
+    width: 200px;
+    font-weight: bold;
+    color: white;
+    //background: #00BF9C !important;
+    height: 46px !important;
+    //border-radius: 24px !important;
+    text-transform: none !important;
+
+    &--large {
+        width: 320px;
+    }
+
+    &--text {
+        width: auto;
+        margin-right: 12px;
+    }
+
+    /*@include mediaQuery($mq-tablet) {
+        width: 100%;
+    }*/
+}

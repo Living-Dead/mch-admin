@@ -1,0 +1,30 @@
+version: "3.5"
+services:
+  mch_admin_frontendgenerator:
+    build:
+      context: ./frontend
+    container_name: frontendgenerator_mch-admin
+    volumes:
+      - ./frontend/source:/home/app:rw
+    networks:
+      - mch-admin-network
+  mch_admin_backend:
+    build:
+      context: ./backend
+    container_name: backend_mch-admin
+    environment:
+      - APP_ENVIRONMENT=dev
+    env_file:
+      - ./backend/environments.env
+    volumes:
+      - ./backend/source:/home/app:rw
+      - ./frontend/source:/home/app/fe:ro
+    ports:
+      - "99:3880"
+      - "9241:9241"
+    networks:
+      - mch-admin-network
+networks:
+  mch-admin-network:
+    external:
+      name: mch-network
