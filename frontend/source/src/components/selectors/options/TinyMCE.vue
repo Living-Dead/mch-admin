@@ -5,11 +5,11 @@
       v-model="$store.state.blog.post"
       :other_options="options"
       :readonly="readonly" />
-    <div
+      <div
       id="articleData"
       style="visibility: hidden"
-      data-count="0" />
-      <input id="image" type="file" name="image" class="d-none" @change="onFileChanged" />
+      data-image="0" />
+      <input id="image" type="file" name="image" class="d-none" />
   </div>
 </template>
 
@@ -37,6 +37,7 @@ figure.image figcaption {
     height: 400px !important;
     object-fit: cover;
 }
+
 </style>
 
 <script>
@@ -64,46 +65,34 @@ export default {
         valid_elements: '*[*]',
         language_url: `https://cdn.jsdelivr.net/npm/tinymce-lang/langs/hu_HU.js`,
         height: parseInt(this.height),
-  menubar: "tools",
-  toolbar: "spellchecker | language",
-        //menubar: false,
+        menubar: "tools",
         link_class_list: [{
           title: 'None',
           value: 'article-link',
         }],
-        paste_data_images: true,
-        spellchecker_language: 'hu',
-        spellchecker_callback: function(method, text, success, failure) {
-          console.log('----', text);
-    var words = text.match(this.getWordCharPattern());
-     console.log('--words--', words);
-    if (method == "spellcheck" && words) {
-      var suggestions = {};
-      for (var i = 0; i < words.length; i++) {
-        suggestions[words[i]] = ["modositas", "Second"];
-      }
-      success(suggestions);
-    }
-  },
+        content_css: false,
+        //content_style: '',
+        paste_data_images: false,
         plugins: [
           'image',
           'link anchor pagebreak',
           'searchreplace wordcount fullscreen',
           'template paste textpattern',
-          'media',
+          'media instagram',
           'preview',
-          'spellchecker',
+          'powerpaste',
         ],
-        toolbar1: 'undo redo | bold italic | link image | blockquote | styleselect | media | preview',
+        toolbar1: 'undo redo | bold italic | link image | blockquote | styleselect | media | preview | instagram',
         style_formats: [
           {
-            title: 'Szerző',
-            inline: 'cite'
+            title: 'Spoiler',
+            inline: 'div',
+            classes: 'mch-article-spoiler-alert',
           },
           {
-            title: 'Spoiler',
-            inline: 'span',
-            classes: 'spoiler-alert',
+            title: 'Képaláírás',
+            inline: 'cite',
+            classes: 'mch-article-cite'
           },
         ],
         image_advtab: false,
@@ -117,8 +106,7 @@ export default {
         file_picker_callback: function(cb, value, meta) {
           const article = document.querySelector('#articleData');
           const input = document.getElementById('image');
-          let count = parseInt(article.dataset.count);
-
+          let count = parseInt(article.dataset.image);
           if (meta.filetype == 'image') {
             input.click();
             input.onchange = function () {
@@ -126,7 +114,7 @@ export default {
               const reader = new FileReader();
               reader.onload = function (e) {
                   count++;
-                  article.setAttribute('data-count', count.toString());
+                  article.setAttribute('data-image', count.toString());
                   cb(e.target.result, {
                     alt: ''
                   });
@@ -135,17 +123,15 @@ export default {
             };
           }
         },
-        setup: function(editor) {
-          editor.on('NodeChange', function(e) {
-            const article = document.querySelector('#articleData');
-            const count = parseInt(article.dataset.count);
-            if (e.element.tagName === 'IMG') {
-              e.element.setAttribute('data-image-count', count);
-              e.element.setAttribute('width', '100%');
-              e.element.setAttribute('height', '400px');
-            }
-          });
-        },
+         media_url_resolver: function (data, resolve/*, reject*/) {
+    if (data.url.indexOf('youtube') !== -1) {
+      var embedHtml = '<iframe src="' + data.url +
+      '" width="100%" height="720px" ></iframe>';
+      resolve({html: embedHtml});
+    } else {
+      resolve({html: ''});
+    }
+  },
         video_template_callback: function(data) {
           console.log('video', data);
           return `
@@ -155,19 +141,99 @@ export default {
               width="100%"
               allowfullscreen="true">
             </iframe>`;
+            /*
+            <iframe width="420" height="315"
+src="https://www.youtube.com/embed/tgbNymZ7vqY">
+</iframe>*/
         },
+        setup: function(editor) {
+          editor.on('NodeChange', function(e) {
+            const article = document.querySelector('#articleData');
+            const count = parseInt(article.dataset.image);
+            if (e.element.tagName === 'IMG') {
+              e.element.setAttribute('data-image', count);
+              e.element.setAttribute('width', '100%');
+              e.element.setAttribute('height', '400px');
+              e.element.setAttribute('style', 'object-fit: contain; background: black;');
+            }
+          });
+          window.tinymce.PluginManager.add('instagram', function(editor, url) {
+            // Add a button that opens a window
+            editor.addButton('instagram', {
+                icon: 'instagram-icon mdi mdi-instagram',
+                tooltip: 'Instagram',
+                onclick: function() {
+                    // Open window
+                    editor.windowManager.open({
+                        title: 'Instagram Embed',
+                        body: [
+                            {   type: 'textbox',
+                                size: 40,
+                                height: '100px',
+                                name: 'instagram',
+                                label: 'instagram'
+                            }
+                        ],
+                        onsubmit: function(e) {
+                            // Insert content when the window form is submitted
+                            var embedCode = e.data.instagram;
+                            var script = embedCode.match(/<script.*<\/script>/)[0];
+                            var scriptSrc = script.match(/".*\.js/)[0].split("\"")[1];
+                            var sc = document.createElement("script");
+                            sc.setAttribute("src", scriptSrc);
+                            sc.setAttribute("type", "text/javascript");
+
+                            var iframe = document.getElementById('instagram' + "_ifr");
+                            var iframeHead = iframe.contentWindow.document.getElementsByTagName('head')[0];
+
+                            tinyMCE.activeEditor.insertContent(e.data.instagram);
+                            iframeHead.appendChild(sc);
+                            // editor.insertContent('Title: ' + e.data.title);
+                        }
+                    });
+                }
+            });
+          });
+          window.tinymce.PluginManager.add('youtube', function(editor, url) {
+            // Add a button that opens a window
+            editor.addButton('youtube', {
+                icon: 'instagram-icon mdi mdi-instagram',
+                tooltip: 'Instagram',
+                onclick: function() {
+                    // Open window
+                    editor.windowManager.open({
+                        title: 'Youtube Embed',
+                        body: [
+                            {   type: 'textbox',
+                                size: 40,
+                                height: '100px',
+                                name: 'youtube',
+                                label: 'Youtube'
+                            }
+                        ],
+                        onsubmit: function(e) {
+                          console.log('youtube e', e)
+                            /*
+                            var ifrm = document.createElement('iframe');
+ifrm.setAttribute('id', 'ifrm'); // assign an id
+
+//document.body.appendChild(ifrm); // to place at end of document
+
+// to place before another page element
+var el = document.getElementById('marker');
+el.parentNode.insertBefore(ifrm, el);
+
+// assign url
+ifrm.setAttribute('src', 'demo.html');
+*/
+                        }
+                    });
+                }
+            });
+        });
+        }
       },
     }
-  },
-  methods: {
-    onFileChanged(e) {
-      this.images.pictures.push({
-        file: e.target.files[0],
-        filename: this.pictureCount++,
-      });
-
-      console.log('this.images.pictures', this.images.pictures)
-    },
   },
 };
 </script>

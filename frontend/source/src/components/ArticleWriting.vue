@@ -22,10 +22,11 @@
                 class="pl-0 pr-0"
                 v-if="isValidTvOrMovieCategory">
                 <MovieSearch :category="$store.state.blog.category" />
+                <Season v-if="showNextStep || $store.state.movies.isSelected" />
               </v-flex>
               <div v-if="showNextStep || $store.state.movies.isSelected">
                 <ArticleDefault />
-                <!--<Season :movie="movie" />-->
+                <!--<Season v-if="isValidTvOrMovieCategory" />-->
                 <v-layout wrap>
                   <v-flex
                     class="pl-3 pr-3"
@@ -40,17 +41,16 @@
                     </TinyMCE>
                   </v-flex>
                 </v-layout>
-                <UploadImage />
                 <MovieDetails v-if="isValidTvOrMovieCategory" />
-                <Rating v-if="$store.state.blog.category !== 'news'" />
+                <Rating v-if="isValidTvOrMovieCategory || $store.state.blog.category === 'video'" />
+                <SearchEngine />
+                <v-btn
+                  :disabled="!valid"
+                  color="mchhh-primary"
+                  @click="send()">
+                  Beküldöm ellenőrzésre
+                </v-btn>
               </div>
-              <SearchEngine v-if="$store.state.blog.category" />
-              <v-btn
-                v-if="$store.state.blog.category"
-                :disabled="!valid"
-                color="mchhh-primary"
-                @click="send()"> Beküldöm ellenőrzésre
-              </v-btn>
             </v-form>
           </div>
         </BaseMaterialCard>
@@ -69,7 +69,8 @@ import MovieDetails from '@/components/selectors/options/MovieDetails'
 //import Recommendation from '@/components/selectors/options/Recommendation'
 import Rating from '@/components/selectors/options/Rating'
 import SearchEngine from '@/components/selectors/options/SearchEngine'
-import UploadImage from '@/components/selectors/options/UploadImage'
+//import UploadImage from '@/components/selectors/options/UploadImage'
+import Season from '@/components/selectors/options/Season'
 
 export default {
   components: {
@@ -81,7 +82,8 @@ export default {
     //Recommendation,
     Rating,
     SearchEngine,
-    UploadImage,
+    //UploadImage,
+    Season,
   },
   data() {
     return {
@@ -100,12 +102,6 @@ export default {
     }
   },
   computed: {
-    //rating() {
-      //return this.$store.state.rating.value;
-    //},
-    details() {
-      return this.$store.getters.details;
-    },
     isValidTvOrMovieCategory() {
       return this.$store.state.blog.category
         && this.$store.state.blog.category === 'movie'
@@ -127,6 +123,10 @@ export default {
   },
   methods: {
     send() {
+      console.log({
+        search: this.$store.state.blog.searchEngine,
+        details: this.$store.state.movies.details,
+      })
       //this.$store.dispatch('createBlog', blogObject);
     },
   },

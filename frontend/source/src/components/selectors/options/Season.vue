@@ -1,8 +1,7 @@
 <template>
   <v-flex
     xs12
-    sm4
-    md4
+    md10
     class="pl-0 pr-0">
     <v-select
       :rules="[v => !!v || 'A mező kitöltése kötelező!']"
@@ -10,23 +9,23 @@
       :items="rates"
       label="Pontozás"
       outlined
-      hide-details
-      suffix=" / 10" />
+      hide-details />
   </v-flex>
 </template>
 
 <script>
 
 export default {
-  name: 'Summary',
+  name: 'Season',
   data: () => ({
-    rates: [
-      1, 2, 3, 4,
-      5, 6, 7, 8,
-      9, 10,
-    ],
+    rates: [],
     rating: null,
   }),
+  mounted() {
+    for (var i = 1; i <= this.$store.state.movies.seasonsOfNumber; i++) {
+      this.rates.push(i)
+    }
+  },
   /*watch: {
     rating(nv) {
       this.$store.dispatch('addRating', nv);

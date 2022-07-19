@@ -5,6 +5,7 @@ const state = {
   intro: null,
   coverName: null,
   post: null,
+  searchEngine: [],
 };
 
 export const blog = {

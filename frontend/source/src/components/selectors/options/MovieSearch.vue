@@ -40,6 +40,14 @@
         </v-list-item-content>
       </v-list-item>
     </v-menu>
+    <!--<iframe
+      :src="`https://widget.justwatch.com/inline_widget?iframe_key=0&amp;language=hu&amp;api_key=ahTWS3gDYdWV5YPol7xIHt4mpQXJm2xM&amp;object_type=${$store.state.blog.category === 'movie' ? 'movie' : 'show'}&amp;id=${movie.imdbId}&amp;id_type=imdb&amp;offer_label=none&amp;scale=1&amp;theme=dark&amp;title_not_found_message=none&amp;webpage=http%3A%2F%2Flocalhost:89%2Fdashboard&amp;no_offers_message=.`"
+      class="jw-widget-iframe"
+      width="100%"
+      height="70px"
+      frameborder="0"
+      color="black"
+      style="border-radius: 4px;" />-->
   </div>
 </template>
 

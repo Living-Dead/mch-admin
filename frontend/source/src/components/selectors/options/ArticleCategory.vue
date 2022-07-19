@@ -1,14 +1,14 @@
 <template>
   <v-select
     v-model="$store.state.blog.category"
-	:items="categories"
-	item-text="text"
-	item-value="id"
-	label="Kategória kiválasztása"
-	outlined
-	:rules="[v => !!v || 'A mező kitöltése kötelező!']"
-	required
-	hide-details />
+    :items="categories"
+    item-text="text"
+    item-value="id"
+    label="Kategória kiválasztása"
+    outlined
+    :rules="[v => !!v || 'A mező kitöltése kötelező!']"
+    required
+    hide-details />
 </template>
 
 <script>
@@ -33,12 +33,12 @@
           id: 'tv',
         },
         {
-          text: 'Rajfilm',
-          id: 'animation',
-        },
-        {
           text: 'Videók',
           id: 'video',
+        },
+        {
+          text: 'Vélemény/gondolat',
+          id: 'opinion',
         }];
       },
     }

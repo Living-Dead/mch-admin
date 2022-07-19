@@ -1,141 +1,121 @@
 <template>
-  <v-layout
-    class="pt-3 pb-3"
-    wrap>
-    <v-flex
-      xs12
-      sm8
-      md8
-      v-for="(item, index) in Object.keys($store.state.movies.details)"
+  <div>
+    <v-layout
+      class="pa-0"
+      wrap
+      v-for="(data, index) in Object.keys($store.state.movies.details)"
       v-bind:key="index">
-      <v-text-field
-        :style="item === 'poster' ? { 'float': 'left', 'width' : '80%' } : {}"
-        v-model="$store.state.movies.details[item]"
-        :label="labels[item]"
-        outlined
-        :suffix="item === 'runtime' ? 'perc' : ''"
-        :rules="[v => !!v || 'A mező kitöltése kötelező!']"
-        :disabled="!!$store.state.movies.details[item]"
-        hide-details />
-        <img style="float: right;" v-if="item === 'poster'" width="56px" height="56px" :src="$store.state.movies.details[item]" />
-    </v-flex>
-    <v-flex
-      xs12
-      sm8
-      md8>
-      <v-autocomplete
-        ref="genres"
-        label="Műfaj"
-        :items="genres"
-        v-model="$store.state.movies.details.selecteGenres"
-        small-chips
-        outlined
-        :rules="[v => !!v || 'A mező kitöltése kötelező!']"
-        required
-        hide-details="auto"
-        multiple
-        item-text="name"
-        item-value="id">
-      </v-autocomplete>
-    </v-flex>
-  </v-layout>
+      <v-flex
+        xs12
+        sm8
+        md8
+        v-if="$store.state.movies.details[data] && data !== 'genres'">
+        <v-text-field
+          :style="data === 'poster' ? { 'float': 'left', 'width' : '80%' } : {}"
+          v-model="$store.state.movies.details[data]"
+          :label="labels[data]"
+          outlined
+          :suffix="data === 'runtime' ? 'perc' : ''"
+          :rules="[v => !!v || 'A mező kitöltése kötelező!']"
+          :disabled="!!$store.state.movies.details[data]"
+          hide-details />
+          <img style="float: right;"
+            v-if="data === 'poster'"
+            width="56px"
+            height="56px"
+            :src="$store.state.movies.details[data]" />
+      </v-flex>
+      <v-flex
+        xs12
+        sm8
+        md8
+        v-if="$store.state.movies.details[data] && data === 'genres'">
+        <v-select
+          v-model="$store.state.movies.details.genres"
+          :items="genres"
+          label="Select Item"
+          item-text="name"
+          item-value="id"
+          multiple
+          outlined>
+          <template v-slot:selection="{ item }">
+            <v-chip>
+              <span>{{ item.name }}</span>
+            </v-chip>
+          </template>
+        </v-select>
+      </v-flex>
+      <!--<v-flex
+        xs12
+        sm8
+        md8>
+        <v-select
+          v-model="$store.state.movies.details.genres"
+          :items="genres"
+          label="Select Item"
+          item-text="name"
+          item-value="id"
+          multiple
+          outlined>
+          <template v-slot:selection="{ item, index }">
+            <v-chip>
+              <span>{{ item.name }}</span>
+            </v-chip>
+          </template>
+        </v-select>
+      </v-flex>-->
+    </v-layout>
+  </div>
 </template>
 
 <script>
 
 export default {
   name: 'MovieDetails',
-  watch: {
-    movieDetails: {
-      handler(nv) {
-        console.log('NVNVNV', nv)
-      },
-      deep: true,
-    },
-  },
   data: () => ({
     labels: {
       originalTitle: 'A film eredeti címe',
-      imdbId: 'IMDB id',
+      imdbId: 'IMDB ID',
+      tmdbId: 'TMDB ID',
       runtime: 'Játékidő',
       releaseDate: 'Megjelenés',
-      director: 'Rendező',
       seasonsOfNumber: 'Évad',
       title: 'Cím',
-      cast: 'Szereplők',
+      poster: 'Poster'
     },
   }),
   computed: {
     genres() {
-      return this.$store.getters.genres;
+      return [
+        {"id":28,"name":"Action"},
+        {"id":12,"name":"Adventure"},
+        {"id":16,"name":"Animation"},
+        {"id":35,"name":"Comedy"},
+        {"id":80,"name":"Crime"},
+        {"id":99,"name":"Documentary"},
+        {"id":18,"name":"Drama"},
+        {"id":10751,"name":"Family"},
+        {"id":14,"name":"Fantasy"},
+        {"id":36,"name":"History"},
+        {"id":27,"name":"Horror"},
+        {"id":10402,"name":"Music"},
+        {"id":9648,"name":"Mystery"},
+        {"id":10749,"name":"Romance"},
+        {"id":878,"name":"Science Fiction"},
+        {"id":10770,"name":"TV Movie"},
+        {"id":53,"name":"Thriller"},
+        {"id":10752,"name":"War"},
+        {"id":37,"name":"Western"},
+        {"id":10759,"name":"Action & Adventure"},
+        {"id":10751,"name":"Family"},
+        {"id":10763,"name":"News"},
+        {"id":10764,"name":"Reality"},
+        {"id":10765,"name":"Sci-Fi & Fantasy"},
+        {"id":10766,"name":"Soap"},
+        {"id":10767,"name":"Talk"},
+        {"id":10768,"name":"War & Politics"},
+      ];
     },
   },
-  /*methods: {
-    urlToBlob() {
-      fetch(this.$store.state.movies.details.poster)
-      .then(res => res.blob()) // Gets the response and returns it as a blob
-      .then(blob => {
-        // Here's where you get access to the blob
-        // And you can use it for whatever you want
-        // Like calling ref().put(blob)
-
-        // Here, I use it to make an image appear on the page
-        let objectURL = URL.createObjectURL(blob);
-        let myImage = new Image();
-        myImage.src = objectURL;
-        console.log('IMG', myImage.src)
-
-        var formData = new FormData();
-    formData.append("file", formData);
-    formData.append(name, value, filename);
-    });
-    },
-  },*/
-  /*
-  watch: {
-    movie: {
-      handler() {
-        this.showEmptyItems = true;
-      },
-      deep: true,
-    },
-    details: {
-      handler(nv) {
-        Object.keys(nv).forEach((item, index) => {
-          const data = item === 'director' ? new Array(nv[item]) : nv[item];
-          this.$set(this.movie, item, data);
-        });
-      },
-      deep: true,
-    },
-    movie: {
-      handler(nv) {
-        if (nv && (!nv.cast || nv.cast.length === 0)) {
-          this.showAddCast = true;
-        }
-      },
-      deep: true,
-    },
-    cast: {
-      handler(nv) {
-        console.log('cast', nv)
-        this.$set(this.movie, 'cast', nv);
-      },
-      deep: true,
-    },
-  },
-  methods: {
-    addCharacter(name, character) {
-      this.cast.push({
-        name,
-        character,
-      });
-      this.$refs.castName.reset();
-      this.$refs.castCharacter.reset();
-    },
-    removeCharacter(index) {
-      this.$delete(this.cast, index);
-    },
-  },*/
 };
 </script>

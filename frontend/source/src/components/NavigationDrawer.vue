@@ -35,8 +35,8 @@
 <style lang='scss'>
 
   .highlighted {
-    background-color: #070d59 !important;
-    border-color: #070d59 !important;
+    background-color: #03cfff !important;
+    border-color: #03cfff !important;
 
     .page-name {
       color: white;

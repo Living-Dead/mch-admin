@@ -13,25 +13,15 @@ const state = {
     releaseDate: null,
     runtime: null,
     poster: null,
-    cast: null,
+    genres: [],
   },
   rating: null,
   isSelected: false,
   genres: [],
-  selecteGenres: [],
 };
 
 const actions = {
-  imdb({ commit }, imdb) {
-    ApiService.get('OMDB', imdb)
-      .then(response => {
-        commit('IMDB', response.data.omdb);
-      })
-      .catch(error => {
-        console.log('OMDB  MODULES ERROR:', error)
-      })
-  },
-  tmdbDetails({ commit, state }, data) {
+  tmdbDetails({ commit, state, dispatch }, data) {
     const { tmdbId, category, title } = data;
     state.isSelected = false;
     ApiService.get(
@@ -42,22 +32,28 @@ const actions = {
           type: 'details',
         }
       })
-      .then((response) => {
+      .then(async (response) => {
         console.log('responseresponse', response.data)
         response.data.title = title;
         state.isSelected = true;
-        commit('TMDB_DETAILS', response.data);
+        if (category === 'movie') commit('TMDB_DETAILS', response.data);
+        if (category === 'tv') {
+          const imdbId = await dispatch('tmdbExternalId', tmdbId)
+          commit('TMDB_SERIES_DETAILS', {
+            details: response.data,
+            imdb_id: imdbId,
+          });
+        }
       })
       .catch(error => {
         state.isSelected = false;
-        console.log('OMDB  MODULES ERROR:', error)
+        console.log('TMDB  MODULES ERROR:', error);
       })
   },
   tmdbExternalId({ commit }, tmdbId) {
     return new Promise((resolve, reject) => {
       ApiService.get('TMDB_EXTERNAL_ID', tmdbId)
         .then((response) => {
-          console.log('tmdbMovieExternalId', response.data);
           commit('TMDB_EXTERNAL_ID');
           resolve(response.data.tmdbMovieExternalId);
         })
@@ -69,21 +65,6 @@ const actions = {
   resetMovieDetails({ commit }) {
     commit('RESET_MOVIE_DETAILS');
   },
-
-
-  /*showtimes({ commit }, tmdbId) {
-    return new Promise((resolve, reject) => {
-      ApiService.get('SHOWTIMES')
-        .then((response) => {
-          console.log('SHOWTIMES', response.data);
-          commit('SHOWTIMES');
-          resolve(response.data)
-        })
-        .catch(error => {
-          reject(error)
-        })
-   })
-  },*/
 };
 
 const mutations = {
@@ -97,13 +78,31 @@ const mutations = {
     Object.assign(state.details, {
       title: data.title,
       originalTitle: data.original_title,
-      imdbId: data.imdb_id || null,
+      imdbId: data.imdb_id,
       tmdbId: data.id,
       releaseDate: data.release_date,
       runtime: data.runtime,
       poster: data.poster_path ? `https://image.tmdb.org/t/p/w500/${data.poster_path}` : null,
+      genres: data.genres,
+      seasonsOfNumber: null,
     });
     state.genres = genres;
+  },
+  TMDB_SERIES_DETAILS(state, data) {
+    Object.assign(state.details, {
+      title: data.details.title,
+      originalTitle: data.details.original_name,
+      imdbId: data.imdb_id,
+      tmdbId: data.details.id,
+      releaseDate: data.details.first_air_date,
+      runtime: null,
+      poster: data.details.poster_path ? `https://image.tmdb.org/t/p/w500/${data.details.poster_path}` : null,
+      genres: data.details.genres,
+      seasonsOfNumber: data.details.number_of_seasons,
+    });
+    state.seasonsOfNumber = data.details.number_of_seasons;
+    state.genres = genres;
+    console.log(data);
   },
   TMDB_CAST(state, data) {
     state.cast = data.cast;
@@ -112,18 +111,22 @@ const mutations = {
     state.imdbId = data;
   },
   RESET_MOVIE_DETAILS(state) {
-    state.imdb = {};
-    state.tmdbDetails = {};
+    state.details = {
+      title: null,
+      originalTitle: null,
+      imdbId: null,
+      tmdbId: null,
+      releaseDate: null,
+      runtime: null,
+      poster: null,
+      genres: [],
+    };
   },
-};
-
-const getters = {
-  genres: state => state.genres,
 };
 
 export const movies = {
   state,
   actions,
   mutations,
-  getters,
+  //getters,
 };

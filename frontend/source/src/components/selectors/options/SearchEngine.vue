@@ -3,14 +3,32 @@
     class="pl-0 pr-0 mt-3"
     xs12
     md10>
+
     <v-combobox
-      height="46px"
-      v-model="searchEngine"
-      :items="items"
-      label="Kereső optimalizáció"
+      v-model="model"
+      :filter="filter"
+      :hide-no-data="!search"
+      :items="$store.state.blog.searchEngine"
+      :search-input.sync="search"
+      hide-selected
+      label="Search for an option"
       multiple
-      chips
-      outlined>
+      small-chips
+      outlined
+    >
+      <template v-slot:no-data>
+        <v-list-item>
+          <span class="subheading"> Hozzáad: </span>
+          <v-chip
+            :color="`${hexToRgbA(colors[nonce - 1])}`"
+            label
+            small
+            @click="addSearch(search, colors[nonce - 1])"
+          >
+            {{ search }}
+          </v-chip>
+        </v-list-item>
+      </template>
       <template v-slot:selection="{ attrs, item, parent, selected }">
         <v-chip
           v-if="item === Object(item)"
@@ -18,14 +36,48 @@
           :color="`${hexToRgbA(item.color)}`"
           :input-value="selected"
           label
-          small>
-          <span class="pr-2" v-text="item.text"></span>
+          small
+        >
+          <span class="pr-2">
+            {{ item.text }}
+          </span>
           <v-icon
             small
-            @click="remove(item, selected)">
-            mdi-close
+            @click="parent.selectItem(item)"
+          >
+            $delete
           </v-icon>
         </v-chip>
+      </template>
+      <template v-slot:item="{ index, item }">
+        <v-text-field
+          v-if="editing === item"
+          v-model="editing.text"
+          autofocus
+          flat
+          background-color="transparent"
+          hide-details
+          solo
+          @keyup.enter="edit(index, item)"
+        ></v-text-field>
+        <v-chip
+          v-else
+          :color="`${hexToRgbA(item.color)}`"
+          dark
+          label
+          small
+        >
+          {{ item.text }}
+        </v-chip>
+        <v-spacer></v-spacer>
+        <v-list-item-action @click.stop>
+          <v-btn
+            icon
+            @click.stop.prevent="edit(index, item)"
+          >
+            <v-icon>{{ editing !== item ? 'mdi-pencil' : 'mdi-check' }}</v-icon>
+          </v-btn>
+        </v-list-item-action>
       </template>
     </v-combobox>
   </v-flex>
@@ -43,75 +95,84 @@ export default {
   name: 'SearchEngine',
   data: () => ({
     activator: null,
+    colors: [],
     attach: null,
     editing: null,
     editingIndex: -1,
-    items: [],
     nonce: 1,
     menu: false,
-    searchEngine: [],
+    model: [],
+    x: 0,
+    search: null,
+    y: 0,
   }),
+  mounted() {
+    this.makeColor();
+  },
   watch: {
-    searchEngine(val, prev) {
-      if (this.searchEngine.length !== 0) {
-        if (val.length === prev.length) return
+    model(val, prev) {
+      if (val.length === prev.length) return
 
-        this.searchEngine.forEach((element, index) => {
-          if (val[0] === element.text) {
-            return;
+      this.model = val.map(v => {
+        if (typeof v === 'string') {
+          v = {
+            text: v,
+            color: this.colors[this.nonce - 1],
           }
-        })
 
-        this.searchEngine = val.map(v => {
-          if (typeof v === 'string') {
-            v = {
-              text: v,
-              color: `#${this.makeColor()}`,
-            }
-            this.items.push(v)
+          this.$store.state.blog.searchEngine.push(v)
 
-            this.$set(this.article, 'labels', this.items)
+          this.nonce++
+        }
 
-            this.nonce++
-          }
-          return v
-        })
-      }
+        return v
+      })
     },
   },
   methods: {
-    makeColor(length) {
-      return Math.floor(Math.random() * 16777215).toString(16);
+    addSearch(value, color) {
+      console.log('value, color', value, color);
+      this.$store.state.blog.searchEngine.push({
+        text: value,
+        color: color,
+      });
+      this.nonce++
+      this.search = null;
     },
-    hexToRgbA(hex){
-      const r = parseInt(hex.slice(1, 3), 16);
-      const g = parseInt(hex.slice(3, 5), 16);
-      const b = parseInt(hex.slice(5, 7), 16);
+    makeColor() {
+      for (let i = 0; i < 30; i++) {
+        this.colors.push(`#${Math.floor(Math.random() * 16777215).toString(16)}`);
+      }
+    },
+    hexToRgbA(hex) {
+      if (hex) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
 
-      return `rgba(${r}, ${g}, ${b}, .7)`;
+        return `rgba(${r}, ${g}, ${b}, .7)`;
+      }
     },
-    remove(item) {
-      this.searchEngine.forEach((element, index) => {
-        if (item.text === element.text) {
-          this.searchEngine.splice(index, 1);
-        }
-      });
-      this.items.forEach((element, index) => {
-        if (item.text === element.text) {
-          this.items.splice(index, 1);
-        }
-      });
-    },
-    edit (index, item) {
+    edit(index, item) {
       if (!this.editing) {
         this.editing = item
         this.editingIndex = index
-        this.$set(this.items, index, this.editing);
-
       } else {
         this.editing = null
         this.editingIndex = -1
       }
+    },
+    filter(item, queryText, itemText) {
+      if (item.header) return false
+
+      const hasValue = val => val != null ? val : ''
+
+      const text = hasValue(itemText)
+      const query = hasValue(queryText)
+
+      return text.toString()
+        .toLowerCase()
+        .indexOf(query.toString().toLowerCase()) > -1
     },
   },
 };
